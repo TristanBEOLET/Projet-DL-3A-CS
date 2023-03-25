@@ -59,6 +59,7 @@ class Modeldiscriminator(nn.Module):
         self.conv4 = nn.Conv3d(256, 512, kernel_size=4, stride=2, padding=1)
         self.conv5 = nn.Conv3d(512, 1, kernel_size=1, stride=1, padding=0)
         self.leakyrelu = nn.LeakyReLU(0.2, inplace=True)
+        self.linear = nn.Linear(64, 1)
         self.sigmoid = nn.Sigmoid()
 
     def forward(self, x):
@@ -71,6 +72,7 @@ class Modeldiscriminator(nn.Module):
         x = self.conv4(x)
         x = self.leakyrelu(x)
         x = self.conv5(x)
+        x = self.linear(x.flatten(start_dim=1))
         x = self.sigmoid(x)
         return x
 
@@ -144,7 +146,7 @@ def main():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     generator = VNet().float().to(device)
-    discriminator = Modeldiscriminator().float.to(device)
+    discriminator = Modeldiscriminator().float().to(device)
 
     (
         train_dice_scores,
@@ -155,7 +157,7 @@ def main():
     ) = utils_gan.train_model(
         generator,
         discriminator,
-        hyperparameters_gene=hyperparameters_gn,
+        hyperparameters_gn=hyperparameters_gn,
         hyperparameters_discri=hyperparameters_dc,
         train_dataloader=train_dataloader,
         test_dataloader=test_dataloader,
