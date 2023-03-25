@@ -13,8 +13,8 @@ from torch.utils.data.dataset import random_split
 from torchvision import transforms
 
 import data_utils
-import metrics
-import utils
+import metrics_gan
+import utils_gan
 
 torch.manual_seed(0)
 
@@ -48,6 +48,7 @@ class VNet(nn.Module):
         x = F.relu(x)
         x = self.deconv6(x)
         return x
+
 
 class Modeldiscriminator(nn.Module):
     def __init__(self, input_channels=1):
@@ -86,9 +87,9 @@ def main():
     time_stamp = time.strftime("%Y%m%d-%H%M%S")
 
     # Constants
-    hyperparameters_gn = utils.Hyperparameters(
+    hyperparameters_gn = utils_gan.Hyperparameters(
         num_epochs=500,
-        batch_size=64,
+        batch_size=32,
         training_split_ratio=0.8,
         lr=0.001,
         weight_decay=1e-5,
@@ -96,9 +97,9 @@ def main():
     )
     hyperparameters_gn.save(time_stamp=time_stamp)
 
-    hyperparameters_dc = utils.Hyperparameters(
+    hyperparameters_dc = utils_gan.Hyperparameters(
         num_epochs=500,
-        batch_size=64,
+        batch_size=32,
         training_split_ratio=0.8,
         lr=0.001,
         weight_decay=1e-5,
@@ -110,13 +111,17 @@ def main():
     logging.debug(f"weight decay generator: {hyperparameters_gn.weight_decay}")
     logging.debug(f"Prediction threshold generator: {hyperparameters_gn.treshold}")
     logging.debug(f"Batch size generator: {hyperparameters_gn.batch_size}")
-    logging.debug(f"Training split ratio generator : {hyperparameters_gn.training_split_ratio}")
+    logging.debug(
+        f"Training split ratio generator : {hyperparameters_gn.training_split_ratio}"
+    )
 
     logging.debug(f"Learning rate discriminator: {hyperparameters_dc.lr}")
     logging.debug(f"weight decay discriminator: {hyperparameters_dc.weight_decay}")
     logging.debug(f"Prediction threshold discriminator: {hyperparameters_dc.treshold}")
     logging.debug(f"Batch size discriminator: {hyperparameters_dc.batch_size}")
-    logging.debug(f"Training split ratio discriminator : {hyperparameters_dc.training_split_ratio}")
+    logging.debug(
+        f"Training split ratio discriminator : {hyperparameters_dc.training_split_ratio}"
+    )
 
     # Data
     transform = transforms.Compose(
@@ -147,8 +152,8 @@ def main():
         train_discri_scores,
         test_dice_scores,
         test_mse_scores,
-    ) = utils.train_model(
-        generator, 
+    ) = utils_gan.train_model(
+        generator,
         discriminator,
         hyperparameters_gene=hyperparameters_gn,
         hyperparameters_discri=hyperparameters_dc,
@@ -158,7 +163,7 @@ def main():
         time_stamp=time_stamp,
     )
 
-    metrics.plot_training_metrics(time_stamp)
+    metrics_gan.plot_training_metrics(time_stamp)
 
 
 if __name__ == "__main__":

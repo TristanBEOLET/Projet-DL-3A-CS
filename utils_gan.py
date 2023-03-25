@@ -2,11 +2,12 @@ import logging
 import pickle
 from typing import Tuple
 
-import metrics
 import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
+
+import metrics
 import utils
 
 
@@ -32,10 +33,9 @@ class Hyperparameters:
 
 
 def save_training_data(
-    
     train_dice_scores: list,
     train_mse_scores: list,
-    train_discri_scores : list,
+    train_discri_scores: list,
     test_dice_scores: list,
     test_mse_scores: list,
     time_stamp: list,
@@ -53,7 +53,7 @@ def save_training_data(
         f"checkpoints/{time_stamp}_training_run.npz",
         train_dice_scores=train_dice_scores,
         train_mse_scores=train_mse_scores,
-        train_discri_scores = train_discri_scores,
+        train_discri_scores=train_discri_scores,
         test_dice_scores=test_dice_scores,
         test_mse_scores=test_mse_scores,
     )
@@ -84,7 +84,14 @@ def test_model(
 
 
 def train_model(
-    generator, discriminator, hyperparameters_gn, hyperparameters_discri, train_dataloader, test_dataloader, device, time_stamp
+    generator,
+    discriminator,
+    hyperparameters_gn,
+    hyperparameters_discri,
+    train_dataloader,
+    test_dataloader,
+    device,
+    time_stamp,
 ):
     """Train model, saves the model with the best validation dice score, and final model."""
     criterion_gn = nn.MSELoss(reduction="mean")
@@ -131,8 +138,13 @@ def train_model(
             mse_loss = criterion_gn(outputs, labels)
             loss_gene = dice_loss + mse_loss
             loss_gene.backward()
-            discri_real_loss = criterion_dc(discriminator(labels), torch.ones(labels.size(0), 1).to(device))
-            discri_fake_loss = criterion_dc(discriminator(outputs.detach()), torch.zeros(outputs.size(0), 1).to(device))
+            discri_real_loss = criterion_dc(
+                discriminator(labels), torch.ones(labels.size(0), 1).to(device)
+            )
+            discri_fake_loss = criterion_dc(
+                discriminator(outputs.detach()),
+                torch.zeros(outputs.size(0), 1).to(device),
+            )
             loss_discri = discri_real_loss + discri_fake_loss
             loss_discri.backward()
             optimizer_discri.step()
@@ -147,7 +159,7 @@ def train_model(
 
         dice_score = 1 - (dice_loss_sum / len(train_dataloader))
         mse_score = mse_loss_sum / len(train_dataloader)
-        discri_score = discri_loss_sum/ / len(train_dataloader)
+        discri_score = discri_loss_sum / len(train_dataloader)
         train_dice_scores.append(dice_score)
         train_mse_scores.append(mse_score)
         train_discri_scores.append(discri_score)
@@ -180,4 +192,10 @@ def train_model(
         test_mse_scores=test_mse_scores,
         time_stamp=time_stamp,
     )
-    return train_dice_scores, train_mse_scores, train_discri_scores, test_dice_scores, test_mse_scores
+    return (
+        train_dice_scores,
+        train_mse_scores,
+        train_discri_scores,
+        test_dice_scores,
+        test_mse_scores,
+    )
