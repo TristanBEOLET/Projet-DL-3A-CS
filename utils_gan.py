@@ -103,7 +103,7 @@ def train_model(
     )
 
     optimizer_discri = optim.Adam(
-        generator.parameters(),
+        discriminator.parameters(),
         lr=hyperparameters_discri.lr,
         weight_decay=hyperparameters_discri.weight_decay,
     )
