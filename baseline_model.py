@@ -2,19 +2,18 @@ import logging
 import pickle
 import time
 
+import data_utils
 import matplotlib.pyplot as plt
+import metrics
 import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
+import utils
 from torch.utils.data import DataLoader
 from torch.utils.data.dataset import random_split
 from torchvision import transforms
-
-import data_utils
-import metrics
-import utils
 
 torch.manual_seed(0)
 
@@ -69,6 +68,7 @@ def main():
         lr=0.001,
         weight_decay=1e-5,
         treshold=0.5,
+        image_size=(128, 128, 20),
     )
     hyperparameters.save(time_stamp=time_stamp)
 
@@ -81,7 +81,7 @@ def main():
     # Data
     transform = transforms.Compose(
         [
-            data_utils.Resize3D((128, 128, 20)),
+            data_utils.Resize3D(hyperparameters.image_size),
         ]
     )
 
@@ -90,10 +90,10 @@ def main():
     train, test = random_split(dataset, [nb_train, len(dataset) - nb_train])
 
     train_dataloader = DataLoader(
-        train, batch_size=hyperparameters.batch_size, shuffle=True
+        train, batch_size=hyperparameters.batch_size, shuffle=True, num_workers=15
     )
     test_dataloader = DataLoader(
-        test, batch_size=hyperparameters.batch_size, shuffle=False
+        test, batch_size=hyperparameters.batch_size, shuffle=False, num_workers=15
     )
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
