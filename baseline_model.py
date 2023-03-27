@@ -2,18 +2,19 @@ import logging
 import pickle
 import time
 
-import data_utils
 import matplotlib.pyplot as plt
-import metrics
 import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
-import utils
 from torch.utils.data import DataLoader
 from torch.utils.data.dataset import random_split
 from torchvision import transforms
+
+import data_utils
+import metrics
+import utils
 
 torch.manual_seed(0)
 
@@ -63,20 +64,21 @@ def main():
     # Constants
     hyperparameters = utils.Hyperparameters(
         num_epochs=500,
-        batch_size=64,
+        batch_size=32,
         training_split_ratio=0.8,
         lr=0.001,
         weight_decay=1e-5,
         treshold=0.5,
-        image_size=(128, 128, 20),
+        image_size=(224, 224, 20),
     )
     hyperparameters.save(time_stamp=time_stamp)
 
-    logging.debug(f"Learning rate : {hyperparameters.lr}")
-    logging.debug(f"weight decay : {hyperparameters.weight_decay}")
-    logging.debug(f"Prediction threshold : {hyperparameters.treshold}")
-    logging.debug(f"Batch size : {hyperparameters.batch_size}")
-    logging.debug(f"Training split ratio : {hyperparameters.training_split_ratio}")
+    logging.info(f"Learning rate : {hyperparameters.lr}")
+    logging.info(f"weight decay : {hyperparameters.weight_decay}")
+    logging.info(f"Prediction threshold : {hyperparameters.treshold}")
+    logging.info(f"Batch size : {hyperparameters.batch_size}")
+    logging.info(f"Training split ratio : {hyperparameters.training_split_ratio}")
+    logging.info(f"Image size : {hyperparameters.image_size}")
 
     # Data
     transform = transforms.Compose(
@@ -97,6 +99,7 @@ def main():
     )
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    logging.info(f"Device : {device}")
 
     model = VNet().float().to(device)
 

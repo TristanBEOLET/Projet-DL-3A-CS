@@ -2,24 +2,28 @@ import logging
 import pickle
 from typing import Tuple
 
-import metrics
 import numpy as np
 import torch
 import torch.nn as nn
 import torch.optim as optim
+
+import metrics
 import utils
 
 
 class Hyperparameters:
     def __init__(
-        self, num_epochs, batch_size, training_split_ratio, lr, weight_decay, treshold
+        self,
+        **kwargs,  # num_epochs, batch_size, training_split_ratio, lr, weight_decay, treshold
     ) -> None:
-        self.num_epochs = num_epochs
+        for k, v in kwargs.items():
+            setattr(self, k, v)
+        """self.num_epochs = num_epochs
         self.batch_size = batch_size
         self.training_split_ratio = training_split_ratio
         self.lr = lr
         self.weight_decay = weight_decay
-        self.treshold = treshold
+        self.treshold = treshold"""
 
     def save(self, time_stamp):
         pickle.dump(
