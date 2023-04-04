@@ -7,8 +7,12 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 
+from matplotlib import pyplot as plt
+from matplotlib import animation
+
 import metrics
 import utils
+
 
 
 class Hyperparameters:
@@ -82,6 +86,14 @@ def test_model(
     return 1 - (test_dice_loss_sum / len(test_dataloader)), test_mse_loss_sum / len(
         test_dataloader
     )
+
+def get_scores(y, y_pred, threshold = 0.5):
+    threshold = 0.5
+    criterion = nn.MSELoss(reduction="mean")
+    dice_loss = 1 - metrics.dice(y_pred > threshold, y)
+    mse_loss = criterion(y_pred, y)
+
+    return dice_loss, mse_loss
 
 
 def train_model(
@@ -158,3 +170,61 @@ def train_model(
         time_stamp=time_stamp,
     )
     return train_dice_scores, train_mse_scores, test_dice_scores, test_mse_scores
+
+def generate_gif(X, y, y_pred, threshold = 0.5, image_name = 'train', model_name='', X_grad_cam = None, save_gifs = True):
+    ncols = 3 if isinstance(X_grad_cam, type(None)) else 4
+    fig, axs = plt.subplots(ncols=ncols, sharey=True, figsize=(6, 2))
+    image = axs[0].imshow(X[0, :, :], animated=True, cmap='gray', vmin=X.min(), vmax=X.max())
+
+    # dupliquer sur 3 canaux + supprimer l'endroit où on a un masque sur les 3 canaux, et le faire apparaître en vert
+    X_repeated = X.unsqueeze(1).repeat(1, 3, 1, 1).permute(0, 2, 3, 1)/X.max()
+
+    X_segmentation_truth = torch.where(y.unsqueeze(3).repeat(1,1,1,3)==0, X_repeated.float(),0)
+    X_segmentation_truth[:, :, :, 1] =torch.where(y==0, X_segmentation_truth[:, :, :, 1], y.float()/3)
+    #Peut-être changer pour mettre vert/orange/rouge en fonction de la valeur ?
+    X_segmentation_predicted = torch.where(y_pred.unsqueeze(3).repeat(1,1,1,3)<=threshold, X_repeated.float(),0)
+    X_segmentation_predicted[:, :, :, 0] = torch.where(y_pred<=threshold, X_segmentation_predicted[:, :, :, 1], y_pred/y_pred.max())
+    #idem
+    if not isinstance(X_grad_cam, type(None)):
+        masked_cam = np.ma.masked_where(X_grad_cam <= 0.1, X_grad_cam)[0, 0, :, :, :]
+
+    segmentation_truth = axs[1].imshow(X_segmentation_truth[0, :, :, :], animated=True, cmap='Greens', vmin=X_segmentation_truth.min(),  vmax=X_segmentation_truth.max())
+    
+
+    segmentation_predicted = axs[2].imshow(X_segmentation_predicted[0, :, :, :], animated=True, cmap='gray', vmin=X_segmentation_predicted.min(), vmax=X_segmentation_predicted.max())
+
+    if not isinstance(X_grad_cam, type(None)):
+        base_grad_cam = axs[3].imshow(X[0, :, :], animated=True, cmap='gray', vmin=X.min(), vmax=X.max())
+        mask_grad_cam = axs[3].imshow(masked_cam[:, :, 0], alpha=0.6, vmin = masked_cam.min(), vmax = masked_cam.max())
+    
+    def init_function():
+        image.set_data(X[0, :, :])
+        segmentation_truth.set_data(X_segmentation_truth[0, :, :, :])
+        segmentation_predicted.set_data(X_segmentation_predicted[0, :, :, :])
+        if not isinstance(X_grad_cam, type(None)):
+            base_grad_cam.set_data(X[0, :, :])
+            mask_grad_cam.set_data(masked_cam[:, :, 0])
+            return image, segmentation_truth, segmentation_predicted, base_grad_cam, mask_grad_cam,
+        return image, segmentation_truth, segmentation_predicted,
+
+    def animate(i):
+        image.set_array(X[i, :, :])
+        segmentation_truth.set_array(X_segmentation_truth[i, :, :, :])
+        segmentation_predicted.set_array(X_segmentation_predicted[i, :, :, :])
+        if not isinstance(X_grad_cam, type(None)):
+            base_grad_cam.set_array(X[i, :, :])
+            mask_grad_cam.set_array(masked_cam[:, :, i])
+            return image, segmentation_truth, segmentation_predicted, base_grad_cam, mask_grad_cam,
+        return image, segmentation_truth, segmentation_predicted,
+
+    # calling animation function of matplotlib
+    anim = animation.FuncAnimation(fig,
+                                   animate,
+                                   init_func=init_function,
+                                   frames=np.shape(X)[0],  # amount of frames being animated
+                                   interval=200,                       # update every second
+                                   blit=True)
+    fig.suptitle(f'Patient : {image_name}, threshold = {threshold}, model={model_name}', fontsize=11) 
+    if save_gifs:
+        anim.save(f"./vizualisation_img/img_{model_name}_{image_name}.gif", writer='Pillow')   # save as gif
+    plt.show()
