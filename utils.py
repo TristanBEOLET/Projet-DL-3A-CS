@@ -271,6 +271,15 @@ def train_model_focal(
     )
     return train_dice_scores, train_mse_scores, test_dice_scores, test_mse_scores
 
+def get_scores_focal(y, y_pred, threshold=0.5):
+    threshold = 0.5
+    criterion = torchvision.ops.sigmoid_focal_loss
+    dice_loss = 1 - metrics.dice(y_pred > threshold, y)
+    mse_loss = criterion(y_pred, y, reduction="mean")
+    mse_loss = criterion(y_pred, y)
+
+    return dice_loss, mse_loss
+
 
 def generate_gif(
     X,
