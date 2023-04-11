@@ -55,4 +55,20 @@ python <file.py>
 All the training data will be saved in the `checkpoints/` folder. You can identify different runs with the timestamp of when the training started. 
 
 Figures with loss over epochs will be saved for both training and testing with the desired loss. 
+
+### Visualization
+
+To visualize results from a model, you can use ```python <data_viz.py>``` command. It will produce animated GIFs, displaying the MR slices, ground truth according to doctors, and the prediction from the selected model. You can also choose to visualize the gradient informations. 
+
+Several variables can be changed in this file : 
+- `MODEL` : fill in path to saved model to load it and use it. Warning : if you are using 'nvidia vnet' model, you need to change the import line 2, to load the right Vnet class.
+- `MODEL_NAME` : model name, to be displayed on images, and used when saving.
+- `SEED` : use 0 to get the same train/test split as in models
+- `WIDTH, HEIGHT, DEPTH` : used to transform images
+- `TRAINING_SPLIT_RATIO` : Choose it as in model training to get same results
+- `NB_DISPLAYED` : Number of GIFs to be displayed, for both train and test dataset
+- `SAVE_GIFS` : If `True`, images will be saved in `visualization_img` folder
+- `DISPLAY_GRADIENT` : If True, an image will be added to the GIF to display gradient
+- `TARGET_LAYER` : layers to use for gradient cam
+
   
